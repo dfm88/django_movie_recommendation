@@ -1,0 +1,55 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: local
+    hooks:
+    -   id: black
+        name: black
+        language: system
+        entry: black
+        args: [--safe, --skip-string-normalization]
+        exclude: ^migrations/
+
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+    -   id: debug-statements
+        language_version: python3
+
+-   repo: local
+    hooks:
+    -   id: flake8
+        name: flake8
+        language: system
+        entry: flake8
+        exclude: ^migrations/
+
+-   repo: local
+    hooks:
+    -   id: isort
+        name: isort (python)
+        language: system
+        entry: isort
+        args: [--trailing-comma, -m=VERTICAL_HANGING_INDENT, --profile, black]
+        exclude: ^migrations/
+
+-   repo: local
+    hooks:
+    -   id: pyupgrade
+        name: pyupgrade
+        language: system
+        entry: pyupgrade
+        args: [--py36-plus]
+        exclude: ^migrations/
+
+-   repo: local
+    hooks:
+    -   id: mypy
+        name: mypy
+        language: system
+        entry: mypy
+        args: [--no-strict-optional,--ignore-missing-imports, --exclude=django_movie_recommendation/django_movie_recommendation/*]
