@@ -1,5 +1,6 @@
 from common.models import BaseModel
 from django.db import models
+from django.utils.text import slugify
 from user.models import UserCustom
 
 """MOVIE"""
@@ -16,6 +17,7 @@ class MovieGenreChoice(models.TextChoices):
 
 class Movie(BaseModel):
     title = models.CharField(max_length=31, unique=True)
+    slug_title = models.SlugField(max_length=31, unique=True)
     genre = models.CharField(
         max_length=15,
         choices=MovieGenreChoice.choices,
@@ -30,8 +32,6 @@ class Movie(BaseModel):
     platforms = models.ManyToManyField(
         'Platform',
         related_name='movies',
-        blank=True,
-        through='MovieBelongsToPlatform',
     )
     advices = models.ManyToManyField(
         UserCustom,
@@ -39,6 +39,10 @@ class Movie(BaseModel):
         blank=True,
         through='recommendation.UserRecommendMovie',
     )
+
+    def save(self, *args, **kwargs):
+        self.slug_title = slugify(self.title)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.pk} - {self.title}:{self.genre}'
@@ -70,15 +74,8 @@ class Platform(BaseModel):
         max_length=15,
         choices=MoviePlatformChoice.choices,
         default=MoviePlatformChoice.OTHER,
+        unique=True,
     )
 
     def __str__(self):
         return f'{self.pk} - {self.name}'
-
-
-class MovieBelongsToPlatform(BaseModel):
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
-    platform = models.ForeignKey(Platform, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'{self.pk} - {self.movie.title} | {self.platform.name}'

@@ -3,7 +3,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user import services
-from user.models import UserCustom
 from user.serializers import InputUserSerializer, OutputUserSerializer
 
 
@@ -19,10 +18,3 @@ class UserRegistrationView(APIView):
         )
         data = OutputUserSerializer(created_user).data
         return Response(data=data, status=status.HTTP_201_CREATED)
-
-
-class UserListView(APIView):
-    def get(self, request):
-        users = UserCustom.objects.all()
-        data = OutputUserSerializer(users, many=True).data
-        return Response(data=data, status=status.HTTP_200_OK)
