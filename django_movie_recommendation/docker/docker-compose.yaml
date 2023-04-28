@@ -11,3 +11,4 @@ services:
       - ../../.env
     ports:
       - "5454:5432"
+    command: ["postgres", "-c", "log_statement=all"]
