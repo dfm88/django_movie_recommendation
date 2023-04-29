@@ -23,3 +23,7 @@ urlpatterns = [
     path('movie/', include('movie.urls')),
     path('recommendation/', include('recommendation.urls')),
 ]
+
+
+# profiler urls
+# urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]

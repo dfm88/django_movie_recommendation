@@ -11,7 +11,7 @@ class MovieListCreateView(APIView):
     permission_classes = (IsAuthenticatedForWriting,)
 
     def get(self, request):
-        movies = selectors.movie_get(
+        movies = selectors.movie_get_filtered(
             request=request,
         )
         data = OutputMovieSerializer(movies, many=True).data

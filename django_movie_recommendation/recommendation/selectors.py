@@ -29,6 +29,22 @@ class RecommendationFilter(django_filters.FilterSet):
         ]
 
 
+def recommendation_get(
+    request: HttpRequest,
+) -> models.QuerySet[UserRecommendMovie]:
+    query = UserRecommendMovie.objects.select_related(
+        'user',
+        'movie',
+        'platform',
+    ).all()
+    mf = RecommendationFilter(
+        data=request.GET,
+        queryset=query,
+        request=request,
+    )
+    return mf.qs
+
+
 def recommendation_on_movie_get(
     request: HttpRequest,
     slug_title: str,
@@ -43,12 +59,7 @@ def recommendation_on_movie_get(
     Returns:
         models.QuerySet[UserRecommendMovie]
     """
-    mf = RecommendationFilter(
-        data=request.GET,
-        queryset=UserRecommendMovie.objects.all(),
-        request=request,
-    )
-    qs = mf.qs
+    qs = recommendation_get(request=request)
     qs = qs.filter(movie__slug_title=slug_title)
     return qs
 
@@ -67,12 +78,6 @@ def recommendation_on_user_get(
     Returns:
         models.QuerySet[UserRecommendMovie]
     """
-
-    mf = RecommendationFilter(
-        data=request.GET,
-        queryset=UserRecommendMovie.objects.all(),
-        request=request,
-    )
-    qs = mf.qs
+    qs = recommendation_get(request=request)
     qs = qs.filter(user__username=username)
     return qs

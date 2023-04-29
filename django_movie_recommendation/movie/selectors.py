@@ -3,10 +3,10 @@ from distutils.util import strtobool
 import django_filters
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
 from django.db import models
-from django.db.models import Avg, Exists, OuterRef
+from django.db.models import Avg, Exists, OuterRef, Prefetch
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
-from movie.models import Movie
+from movie.models import Movie, UserWatchedMovie
 from recommendation.models import UserRecommendMovie
 
 BOOLEAN_CHOICES = (('false', 'False'), ('true', 'True'), ('0', 'False'), ('1', 'True'))
@@ -150,16 +150,30 @@ def set_watched_switch(
     """
     if user and user.is_authenticated:
         movies = movies.annotate(
-            watched=models.Case(
-                models.When(userwatchedmovie__user=user, then=models.Value(True)),
-                default=models.Value(False),
-                output_field=models.BooleanField(),
+            watched=Exists(
+                UserWatchedMovie.objects.filter(
+                    movie=OuterRef('pk'),
+                    user=user,
+                )
             )
         )
     return movies
 
 
-def movie_get(
+def movie_get_eager() -> models.QuerySet[Movie]:
+    return (
+        Movie.objects.prefetch_related('platforms')
+        .prefetch_related(
+            Prefetch(
+                'userrecommendmovie_set',
+                queryset=UserRecommendMovie.objects.select_related('user'),
+            )
+        )
+        .all()
+    )
+
+
+def movie_get_filtered(
     request: HttpRequest,
 ) -> models.QuerySet[Movie]:
     """Get the list of movies based on filters in request object
@@ -170,9 +184,10 @@ def movie_get(
     Returns:
         models.QuerySet[Movie]
     """
+    query = movie_get_eager()
     mf = MovieFilter(
         data=request.GET,
-        queryset=Movie.objects.all(),
+        queryset=query,
         request=request,
     )
     qs = mf.qs
@@ -193,8 +208,12 @@ def movie_get_one(
     Returns:
         Movie: _description_
     """
+    query = movie_get_eager().filter(
+        slug_title=slug_title,
+    )
     return get_object_or_404(
         set_watched_switch(
-            user=user, movies=Movie.objects.filter(slug_title=slug_title)
+            user=user,
+            movies=query,
         )
     )
