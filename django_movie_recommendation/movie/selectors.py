@@ -3,30 +3,55 @@ from distutils.util import strtobool
 import django_filters
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
 from django.db import models
+from django.db.models import Avg, Exists, OuterRef
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 from movie.models import Movie
+from recommendation.models import UserRecommendMovie
 
 BOOLEAN_CHOICES = (('false', 'False'), ('true', 'True'), ('0', 'False'), ('1', 'True'))
 
 
 class MovieFilter(django_filters.FilterSet):
+    # filter for platform name
     platform = django_filters.CharFilter(field_name='platforms', lookup_expr='name')
+    # filter to get only watched or unwatched movies
     has_watched = django_filters.TypedChoiceFilter(
         method='filter_has_watched', choices=BOOLEAN_CHOICES, coerce=strtobool
     )
-    order_by = django_filters.OrderingFilter(
+    # filter to get movies recommended by a given user
+    recommend_by = django_filters.CharFilter(
+        field_name='recommenders', lookup_expr='username'
+    )
+    # filter to get unwatched movies, with at least a comment, sorted by avg of votes
+    recommend_by_others = django_filters.TypedChoiceFilter(
+        method='filter_recommend_by_others_by_avg',
+        choices=BOOLEAN_CHOICES,
+        coerce=strtobool,
+    )
+    # sorting filter by title
+    order_by_title = django_filters.OrderingFilter(
         fields=(('title', 'title'),),
     )
 
     def filter_has_watched(
         self, queryset: models.QuerySet[Movie], name: str, value: bool
-    ):
-        return user_has_watched(
+    ) -> models.QuerySet[Movie]:
+        return movies_user_has_watched(
             movies=queryset,
             user=self.request.user,
             has_watched=value,
         )
+
+    def filter_recommend_by_others_by_avg(
+        self, queryset: models.QuerySet[Movie], name: str, value: bool
+    ) -> models.QuerySet[Movie]:
+        if value:
+            queryset = movies_recommend_by_others_by_avg(
+                movies=queryset,
+                user=self.request.user,
+            )
+        return queryset
 
     class Meta:
         model = Movie
@@ -39,7 +64,7 @@ class MovieFilter(django_filters.FilterSet):
     @property
     def qs(self):
         movies = super().qs
-
+        # set additional 'watched' field for authenticated users
         movies = set_watched_switch(
             user=getattr(self.request, 'user', None),
             movies=movies,
@@ -48,7 +73,7 @@ class MovieFilter(django_filters.FilterSet):
         return movies
 
 
-def user_has_watched(
+def movies_user_has_watched(
     movies: models.QuerySet[Movie],
     user: AbstractBaseUser | AnonymousUser | None,
     has_watched: bool,
@@ -70,6 +95,42 @@ def user_has_watched(
             else (~models.Q(userwatchedmovie__user=user))
         )
         movies = movies.filter(filter_)
+    return movies
+
+
+def movies_recommend_by_others_by_avg(
+    movies: models.QuerySet[Movie],
+    user: AbstractBaseUser | AnonymousUser | None,
+) -> models.QuerySet[Movie]:
+    """Return, for authenticated users the list of movies
+    the user haven't watch, that were commented by someone
+    sort by the average of votes
+
+    Args:
+        movies (models.QuerySet[Movie])
+        user (AbstractBaseUser | AnonymousUser | None)
+
+    Returns:
+        models.QuerySet[Movie]
+    """
+    if user and user.is_authenticated:
+        movies = (
+            movies.filter(
+                (
+                    # movies not watched by user
+                    ~models.Q(userwatchedmovie__user=user)
+                ),
+                (
+                    # movies with at least a recommendation
+                    Exists(UserRecommendMovie.objects.filter(movie=OuterRef('pk')))
+                ),
+            )
+            .annotate(
+                # compute average on recommendation and sort descending
+                vote_avg=Avg('userrecommendmovie__vote')
+            )
+            .order_by('-vote_avg')
+        )
     return movies
 
 

@@ -5,12 +5,15 @@ from recommendation.models import UserRecommendMovie
 
 
 class RecommendationFilter(django_filters.FilterSet):
+    # filter by platform name
     platform = django_filters.CharFilter(field_name='platform', lookup_expr='name')
+    # filter by user to get all recommendation of the given user
     user = django_filters.CharFilter(field_name='user', lookup_expr='username')
+    # filter to allow sorting by platform name
     platform__name = django_filters.CharFilter(
         field_name='platform', lookup_expr='name'
     )
-
+    # sorting filter by vote or platform name
     order_by = django_filters.OrderingFilter(
         fields=(
             ('vote', 'vote'),
@@ -24,10 +27,6 @@ class RecommendationFilter(django_filters.FilterSet):
             'user',
             'platform',
         ]
-
-    @property
-    def qs(self):
-        return super().qs
 
 
 def recommendation_on_movie_get(
