@@ -1,12 +1,14 @@
 from common.serializers import BaseMeta
 from django.contrib.auth.validators import UnicodeUsernameValidator
+
+# from recommendation.serializers import OutputRecommendationSerializerLight
 from movie.models import Movie, Platform
 from rest_framework import serializers
 
 """PLATFORM"""
 
 
-class InputPlatformSerializer(serializers.ModelSerializer):
+class PlatformBaseSerializer(serializers.ModelSerializer):
     class Meta(BaseMeta):
         model = Platform
         # ref https://medium.com/django-rest-framework/dealing-with-unique-constraints-in-nested-serializers-dade33b831d9  # noqa
@@ -17,21 +19,24 @@ class InputPlatformSerializer(serializers.ModelSerializer):
         }
 
 
-class OutputPlatformSerializer(InputPlatformSerializer):
-    pass
+"""MOVIES"""
 
 
-"""MOVIE"""
-
-
-class InputMovieSerializer(serializers.ModelSerializer):
-    platforms = InputPlatformSerializer(many=True)
-    slug_title = serializers.CharField(required=False)
-
+class MovieBaseSerializer(serializers.ModelSerializer):
     class Meta(BaseMeta):
         model = Movie
-        exclude = ('watchers',)
+        exclude = (
+            *BaseMeta.exclude,
+            'watchers',
+        )
 
 
-class OutputMovieSerializer(InputMovieSerializer):
-    watched = serializers.BooleanField(required=False)
+class MovieBaseSerializerLight(MovieBaseSerializer):
+    class Meta(BaseMeta):
+        model = Movie
+        exclude = (
+            *BaseMeta.exclude,
+            "watchers",
+            "platforms",
+            "recommenders",
+        )

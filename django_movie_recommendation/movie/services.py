@@ -1,4 +1,4 @@
-from typing import Iterator
+from typing import Iterable, Iterator
 
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
@@ -13,6 +13,22 @@ def platforms_get_or_create(
     for platform in platforms:
         db_platform, _ = Platform.objects.get_or_create(name=platform['name'])
         yield db_platform
+
+
+def set_platforms_to_movie(
+    platforms: Iterable[Platform],
+    movie: Movie,
+) -> Movie:
+    movie.platforms.set(platforms)
+    return movie
+
+
+def add_platform_to_movie(
+    platform: Platform,
+    movie: Movie,
+) -> Movie:
+    movie.platforms.add(platform)
+    return movie
 
 
 @transaction.atomic
@@ -32,9 +48,13 @@ def movie_create(
         Movie
     """
     movie = Movie.objects.create(title=title, genre=genre)
-
-    db_platforms = platforms_get_or_create(platforms=platforms)
-    movie.platforms.set(db_platforms)
+    platforms_db = platforms_get_or_create(
+        platforms=platforms,
+    )
+    movie = set_platforms_to_movie(
+        platforms=platforms_db,
+        movie=movie,
+    )
 
     movie.full_clean()
     movie.save()

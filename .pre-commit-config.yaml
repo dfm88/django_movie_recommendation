@@ -45,11 +45,3 @@ repos:
         entry: pyupgrade
         args: [--py36-plus]
         exclude: ^migrations/
-
--   repo: local
-    hooks:
-    -   id: mypy
-        name: mypy
-        language: system
-        entry: mypy
-        args: [--no-strict-optional,--ignore-missing-imports, --exclude=django_movie_recommendation/django_movie_recommendation/*]

@@ -18,3 +18,9 @@ class OutputUserSerializer(serializers.ModelSerializer):
             "last_login",
         )
         extra_kwargs = {'password': {'write_only': True}}
+
+
+class OutputUserSerializerLight(serializers.ModelSerializer):
+    class Meta:
+        model = UserCustom
+        fields = ("id", "username")

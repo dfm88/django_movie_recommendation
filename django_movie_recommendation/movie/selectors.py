@@ -15,6 +15,9 @@ class MovieFilter(django_filters.FilterSet):
     has_watched = django_filters.TypedChoiceFilter(
         method='filter_has_watched', choices=BOOLEAN_CHOICES, coerce=strtobool
     )
+    order_by = django_filters.OrderingFilter(
+        fields=(('title', 'title'),),
+    )
 
     def filter_has_watched(
         self, queryset: models.QuerySet[Movie], name: str, value: bool

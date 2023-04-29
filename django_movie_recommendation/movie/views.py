@@ -1,7 +1,7 @@
 from common.permissions import IsAuthenticatedForWriting
 from common.serializers import serialize_input_data
 from movie import selectors, services
-from movie.serializers import InputMovieSerializer, OutputMovieSerializer
+from movie.serializers.serializers import InputMovieSerializer, OutputMovieSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
