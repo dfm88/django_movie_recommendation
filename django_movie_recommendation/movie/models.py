@@ -33,7 +33,7 @@ class Movie(BaseModel):
         'Platform',
         related_name='movies',
     )
-    advices = models.ManyToManyField(
+    recommenders = models.ManyToManyField(
         UserCustom,
         related_name='recommend_movies',
         blank=True,
