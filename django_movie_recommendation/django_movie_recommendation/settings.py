@@ -72,6 +72,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend"),
+    'EXCEPTION_HANDLER': 'common.exceptions.custom_exception_handler',
 }
 
 SECRET_KEY = os.environ.get("SECRET_JWT_KEY")
