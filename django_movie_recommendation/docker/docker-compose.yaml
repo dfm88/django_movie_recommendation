@@ -1,6 +1,23 @@
 version: '3.7'
 
 services:
+  web:
+    build:
+      context: ../../
+      dockerfile: django_movie_recommendation/docker/Dockerfile
+    image: movie_recomm
+    container_name: movie_recomm
+    entrypoint: /movie_recomm/django_movie_recommendation/docker/entrypoint.sh
+    # stdin_open: true
+    # tty: true
+    ports:
+      - "7777:7777"
+    env_file:
+      - ../../.env
+    depends_on:
+      - db
+    networks:
+      - servicenetwork
   db:
     image: postgres
     container_name: movie_db
@@ -11,4 +28,10 @@ services:
       - ../../.env
     ports:
       - "5454:5432"
-    command: ["postgres", "-c", "log_statement=all"]
+    # command: ["postgres", "-c", "log_statement=all"]
+    networks:
+      - servicenetwork
+
+networks:
+    servicenetwork:
+        driver: bridge
