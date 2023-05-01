@@ -2,6 +2,7 @@ from typing import Iterable, Iterator
 
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from movie import selectors
 from movie.models import Movie, MovieGenreChoice, Platform
 from user.models import UserCustom
@@ -74,14 +75,18 @@ def movie_switch_watched(
     Returns:
         Movie
     """
-    movie = selectors.movie_get_one(
-        user=user,
-        slug_title=slug_title,
-    )
+    movie = get_object_or_404(Movie, slug_title=slug_title)
 
-    if movie.watchers.filter(username=user.username).exists():
+    user_watched_movie = movie.watchers.filter(username=user.username).exists()
+
+    if user_watched_movie:
         movie.watchers.remove(user)
     else:
         movie.watchers.add(user)
 
+    # to set "watched" attr
+    movie = selectors.movie_get_one(
+        user=user,
+        slug_title=slug_title,
+    )
     return movie
